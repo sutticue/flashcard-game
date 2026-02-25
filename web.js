@@ -23,8 +23,8 @@ const resultModalNextBtn = document.getElementById('result-modal-next');
 
 // State
 let words = [];
-let wordDeck = [];      // shuffled queue: ใช้จับทีละคำ ไม่ซ้ำจนครบ deck
-let deckIndex = 0;
+let wordsByLetter = {};  // { a: [word,...], b: [...], ... } ใช้ตัวอักษรเป็นหลัก
+let letters = [];        // ['a','b',...,'z'] ที่มีคำอยู่
 let currentQuestion = null;
 let score = 0;
 let totalAnswered = 0;
@@ -97,58 +97,54 @@ function hideResultModal() {
 
 // ─── Question logic ──────────────────────────────────────────────────────────
 
-// สร้าง deck ใหม่จาก words (สับทั้งลิสต์) ใช้จับทีละคำจนครบแล้วค่อยสับใหม่
-function refillDeck() {
-  wordDeck = shuffle([...words]);
-  deckIndex = 0;
-}
-
-// เลือกคำหลักจาก deck (ลำดับสุ่มทั้งชุด ไม่วนแค่ช่วง A–E)
-function drawBaseFromDeck() {
-  if (deckIndex >= wordDeck.length || wordDeck.length === 0) refillDeck();
-  if (wordDeck.length === 0) return null;
-  return wordDeck[deckIndex++];
-}
-
-// เลือกตัวเลือกผิด 3 คำ จากคนละช่วงของลิสต์ (ต้น-กลาง-ท้าย) ให้กระจาย
-function pickDistractors(baseWord, count = 3) {
-  const rest = words.filter((w) => w.word !== baseWord);
-  if (rest.length <= count) return shuffle(rest);
-  const n = rest.length;
-  const t = Math.max(1, Math.floor(n / 3));
-  const segments = [[0, t], [t, t * 2], [t * 2, n]];
-  const picked = [];
-  const usedIndex = new Set();
-  for (let s = 0; s < segments.length && picked.length < count; s++) {
-    const [start, end] = segments[s];
-    const len = end - start;
-    if (len <= 0) continue;
-    let idx = start + Math.floor(Math.random() * len);
-    let tries = 0;
-    while (usedIndex.has(idx) && tries < len * 2) {
-      idx = start + Math.floor(Math.random() * len);
-      tries++;
-    }
-    if (!usedIndex.has(idx)) {
-      usedIndex.add(idx);
-      picked.push(rest[idx]);
+// สร้าง index แยกคำตามตัวอักษรตัวแรก (a–z)
+function buildLetterIndex(wordList) {
+  const index = {};
+  for (const w of wordList) {
+    const first = (w.word && w.word.trim()[0] || '').toLowerCase();
+    if (first >= 'a' && first <= 'z') {
+      if (!index[first]) index[first] = [];
+      index[first].push(w);
     }
   }
-  while (picked.length < count) {
-    const idx = Math.floor(Math.random() * n);
-    if (!usedIndex.has(idx)) {
-      usedIndex.add(idx);
-      picked.push(rest[idx]);
-    }
-  }
-  return shuffle(picked).slice(0, count);
+  return index;
 }
 
+// สุ่มคำโดย: 1) สุ่มตัวอักษรก่อน 2) ค่อยสุ่มคำที่ขึ้นต้นด้วยตัวนั้น → กระจายทั้ง A–Z
 function pickQuestion() {
-  const base = drawBaseFromDeck();
-  if (!base) return null;
-  const others = pickDistractors(base.word, 3);
-  const all = shuffle([base, ...others]);
+  if (letters.length === 0) return null;
+
+  const letter = letters[Math.floor(Math.random() * letters.length)];
+  const bucket = wordsByLetter[letter];
+  if (!bucket || bucket.length === 0) return null;
+
+  const base = bucket[Math.floor(Math.random() * bucket.length)];
+
+  const otherLetters = letters.filter((l) => l !== letter);
+  const usedWords = new Set([base.word]);
+  const distractors = [];
+
+  const shuffledLetters = shuffle([...otherLetters]);
+  for (const L of shuffledLetters) {
+    if (distractors.length >= 3) break;
+    const b = wordsByLetter[L];
+    if (!b || b.length === 0) continue;
+    const candidates = b.filter((w) => !usedWords.has(w.word));
+    if (candidates.length === 0) continue;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    distractors.push(pick);
+    usedWords.add(pick.word);
+  }
+
+  while (distractors.length < 3) {
+    const w = words[Math.floor(Math.random() * words.length)];
+    if (!usedWords.has(w.word)) {
+      distractors.push(w);
+      usedWords.add(w.word);
+    }
+  }
+
+  const all = shuffle([base, ...distractors]);
   return {
     word: base.word,
     definition: base.definition,
@@ -299,8 +295,9 @@ async function loadWords() {
       wordDisplay.textContent = 'No words loaded';
       return;
     }
-    refillDeck();
-    showToast(`โหลด ${words.length} คำ โหมดสุ่มทั้งชุด 🎯`);
+    wordsByLetter = buildLetterIndex(words);
+    letters = Object.keys(wordsByLetter).filter((l) => wordsByLetter[l].length > 0).sort();
+    showToast(`โหลด ${words.length} คำ (${letters.length} ตัวอักษร) สุ่มตาม A–Z 🎯`);
     renderQuestion();
   } catch (err) {
     console.error(err);
