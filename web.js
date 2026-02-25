@@ -1,4 +1,4 @@
-const DATA_URL = './data/oxford-b1-c1-sample.json';
+const DATA_URL = './sample_vocab_practice.csv';
 const LEVELS = ['B1', 'B2', 'C1'];
 
 // DOM
@@ -52,6 +52,51 @@ function showToast(message) {
   toastEl.textContent = message;
   toastEl.classList.add('toast--visible');
   window.setTimeout(() => toastEl.classList.remove('toast--visible'), 1800);
+}
+
+// พาร์ส CSV ง่ายๆ (รองรับฟิลด์มี \" และ , ด้านใน)
+function parseCsvLine(line) {
+  const cells = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '\"') {
+      if (inQuotes && line[i + 1] === '\"') {
+        current += '\"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function parseCsv(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (!lines.length) return [];
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i += 1) {
+    const cols = parseCsvLine(lines[i]);
+    if (!cols.length || !cols[0]) continue;
+    const row = {};
+    headers.forEach((h, idx) => {
+      row[h] = cols[idx] ?? '';
+    });
+    rows.push(row);
+  }
+
+  return rows;
 }
 
 // ─── State updaters ──────────────────────────────────────────────────────────
@@ -289,8 +334,19 @@ async function loadWords() {
   try {
     const res = await fetch(DATA_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const all = await res.json();
-    words = all.filter((w) => LEVELS.includes(w.level));
+    const csvText = await res.text();
+    const rawRows = parseCsv(csvText);
+    const all = rawRows.map((r) => ({
+      word: r.word,
+      level: r.level,
+      pos: r.pos,
+      thai: r.thai,
+      definition: r.definition,
+    }));
+
+    words = all.filter(
+      (w) => w.word && LEVELS.includes((w.level || '').toUpperCase())
+    );
     if (!words.length) {
       wordDisplay.textContent = 'No words loaded';
       return;
