@@ -23,6 +23,8 @@ const resultModalNextBtn = document.getElementById('result-modal-next');
 
 // State
 let words = [];
+let wordDeck = [];      // shuffled queue: ใช้จับทีละคำ ไม่ซ้ำจนครบ deck
+let deckIndex = 0;
 let currentQuestion = null;
 let score = 0;
 let totalAnswered = 0;
@@ -95,9 +97,57 @@ function hideResultModal() {
 
 // ─── Question logic ──────────────────────────────────────────────────────────
 
+// สร้าง deck ใหม่จาก words (สับทั้งลิสต์) ใช้จับทีละคำจนครบแล้วค่อยสับใหม่
+function refillDeck() {
+  wordDeck = shuffle([...words]);
+  deckIndex = 0;
+}
+
+// เลือกคำหลักจาก deck (ลำดับสุ่มทั้งชุด ไม่วนแค่ช่วง A–E)
+function drawBaseFromDeck() {
+  if (deckIndex >= wordDeck.length || wordDeck.length === 0) refillDeck();
+  if (wordDeck.length === 0) return null;
+  return wordDeck[deckIndex++];
+}
+
+// เลือกตัวเลือกผิด 3 คำ จากคนละช่วงของลิสต์ (ต้น-กลาง-ท้าย) ให้กระจาย
+function pickDistractors(baseWord, count = 3) {
+  const rest = words.filter((w) => w.word !== baseWord);
+  if (rest.length <= count) return shuffle(rest);
+  const n = rest.length;
+  const t = Math.max(1, Math.floor(n / 3));
+  const segments = [[0, t], [t, t * 2], [t * 2, n]];
+  const picked = [];
+  const usedIndex = new Set();
+  for (let s = 0; s < segments.length && picked.length < count; s++) {
+    const [start, end] = segments[s];
+    const len = end - start;
+    if (len <= 0) continue;
+    let idx = start + Math.floor(Math.random() * len);
+    let tries = 0;
+    while (usedIndex.has(idx) && tries < len * 2) {
+      idx = start + Math.floor(Math.random() * len);
+      tries++;
+    }
+    if (!usedIndex.has(idx)) {
+      usedIndex.add(idx);
+      picked.push(rest[idx]);
+    }
+  }
+  while (picked.length < count) {
+    const idx = Math.floor(Math.random() * n);
+    if (!usedIndex.has(idx)) {
+      usedIndex.add(idx);
+      picked.push(rest[idx]);
+    }
+  }
+  return shuffle(picked).slice(0, count);
+}
+
 function pickQuestion() {
-  const base = words[Math.floor(Math.random() * words.length)];
-  const others = shuffle(words.filter((w) => w.word !== base.word)).slice(0, 3);
+  const base = drawBaseFromDeck();
+  if (!base) return null;
+  const others = pickDistractors(base.word, 3);
   const all = shuffle([base, ...others]);
   return {
     word: base.word,
@@ -118,6 +168,7 @@ function animateCardIn() {
 function renderQuestion() {
   if (!words.length) return;
   currentQuestion = pickQuestion();
+  if (!currentQuestion) return;
   lockOptions = false;
 
   wordDisplay.textContent = currentQuestion.word;
@@ -248,7 +299,8 @@ async function loadWords() {
       wordDisplay.textContent = 'No words loaded';
       return;
     }
-    showToast(`โหลด ${words.length} คำแล้ว 🎯`);
+    refillDeck();
+    showToast(`โหลด ${words.length} คำ โหมดสุ่มทั้งชุด 🎯`);
     renderQuestion();
   } catch (err) {
     console.error(err);
