@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#050816" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Oxford 5000 Flashcards (B2–C1)</title>
+    <title>Flashcard คำศัพท์ (B1–C1)</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -14,10 +14,10 @@
 
       <header class="page__header">
         <div class="brand">
-          <div class="brand__logo">OX</div>
+          <div class="brand__logo">V</div>
           <div class="brand__text">
-            <h1 class="brand__title">Oxford 5000</h1>
-            <p class="brand__subtitle">B2 &ndash; C1</p>
+            <h1 class="brand__title">Flashcard คำศัพท์</h1>
+            <p class="brand__subtitle">B1 &ndash; C1</p>
           </div>
         </div>
         <div class="header__right">
@@ -31,13 +31,6 @@
           </div>
         </div>
       </header>
-
-      <div class="progress-wrap">
-        <div class="progress-bar">
-          <div class="progress-bar__fill" id="progress-fill"></div>
-        </div>
-        <span class="progress-label" id="progress-label">0 / 10</span>
-      </div>
 
       <main class="page__main">
         <section class="card" id="card">
@@ -54,29 +47,24 @@
           <p class="card__hint" id="definition-display"></p>
 
           <div class="options" id="options"></div>
-
-          <p class="card__feedback" id="feedback"></p>
         </section>
       </main>
 
       <footer class="page__footer">
-        <button class="button button--ghost" id="skip-btn" type="button">Skip</button>
-        <button class="button button--disabled" id="next-btn" type="button" disabled>Next &rarr;</button>
+        <button class="button button--ghost" id="skip-btn" type="button">ข้าม</button>
       </footer>
     </div>
 
     <div class="toast" id="toast" aria-live="polite"></div>
 
-    <div class="gameover" id="gameover" hidden>
-      <div class="gameover__card">
-        <p class="gameover__eyebrow">Round Complete</p>
-        <div class="gameover__stars" id="gameover-stars">☆☆☆</div>
-        <div class="gameover__score" id="gameover-score">0 / 10</div>
-        <p class="gameover__sub" id="gameover-accuracy">0% accurate</p>
-        <p class="gameover__sub gameover__sub--streak" id="gameover-streak">Best streak 🔥 0</p>
-        <button class="button gameover__play-again" id="play-again-btn" type="button">
-          Play Again
-        </button>
+    <div class="result-modal" id="result-modal" hidden aria-modal="true" role="dialog">
+      <div class="result-modal__backdrop"></div>
+      <div class="result-modal__box">
+        <p class="result-modal__title" id="result-modal-title">—</p>
+        <p class="result-modal__word" id="result-modal-word"></p>
+        <p class="result-modal__meaning" id="result-modal-meaning"></p>
+        <p class="result-modal__definition" id="result-modal-definition"></p>
+        <button class="button result-modal__btn" id="result-modal-next" type="button">ถัดไป →</button>
       </div>
     </div>
 

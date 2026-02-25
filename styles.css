@@ -349,6 +349,101 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Result modal (popup after answering) */
+.result-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
+}
+
+.result-modal[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+.result-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 22, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.result-modal__box {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.99));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: resultModalIn 0.25s ease-out;
+}
+
+@keyframes resultModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.result-modal__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.result-modal__title--correct {
+  color: var(--success);
+}
+
+.result-modal__title--wrong {
+  color: var(--danger);
+}
+
+.result-modal__word {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.result-modal__meaning {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.result-modal__definition {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.result-modal__btn {
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
 @media (max-width: 720px) {
   .page {
     padding-top: 16px;

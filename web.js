@@ -1,35 +1,31 @@
 const DATA_URL = './data/oxford-b1-c1-sample.json';
-const LEVELS = ['B2', 'C1'];
-const QUESTIONS_PER_ROUND = 10;
+const LEVELS = ['B1', 'B2', 'C1'];
 
 // DOM
 const wordDisplay = document.getElementById('word-display');
 const definitionDisplay = document.getElementById('definition-display');
 const optionsContainer = document.getElementById('options');
-const feedbackEl = document.getElementById('feedback');
 const levelPill = document.getElementById('level-pill');
 const posPill = document.getElementById('pos-pill');
 const scoreEl = document.getElementById('score');
-const nextBtn = document.getElementById('next-btn');
 const skipBtn = document.getElementById('skip-btn');
 const toastEl = document.getElementById('toast');
-const progressFill = document.getElementById('progress-fill');
-const progressLabel = document.getElementById('progress-label');
 const streakDisplay = document.getElementById('streak-display');
 const streakCountEl = document.getElementById('streak-count');
 const cardEl = document.getElementById('card');
-const gameoverEl = document.getElementById('gameover');
-const gameoverScoreEl = document.getElementById('gameover-score');
-const gameoverAccuracyEl = document.getElementById('gameover-accuracy');
-const gameoverStreakEl = document.getElementById('gameover-streak');
-const gameoverStarsEl = document.getElementById('gameover-stars');
-const playAgainBtn = document.getElementById('play-again-btn');
+
+const resultModal = document.getElementById('result-modal');
+const resultModalTitle = document.getElementById('result-modal-title');
+const resultModalWord = document.getElementById('result-modal-word');
+const resultModalMeaning = document.getElementById('result-modal-meaning');
+const resultModalDefinition = document.getElementById('result-modal-definition');
+const resultModalNextBtn = document.getElementById('result-modal-next');
 
 // State
 let words = [];
 let currentQuestion = null;
 let score = 0;
-let roundAsked = 0;
+let totalAnswered = 0;
 let streak = 0;
 let bestStreak = 0;
 let lockOptions = false;
@@ -58,14 +54,8 @@ function showToast(message) {
 
 // ─── State updaters ──────────────────────────────────────────────────────────
 
-function updateProgress() {
-  const pct = (roundAsked / QUESTIONS_PER_ROUND) * 100;
-  progressFill.style.width = `${pct}%`;
-  progressLabel.textContent = `${roundAsked} / ${QUESTIONS_PER_ROUND}`;
-}
-
 function updateScore() {
-  scoreEl.textContent = `${score} / ${roundAsked}`;
+  scoreEl.textContent = `${score} / ${totalAnswered}`;
 }
 
 function updateStreak() {
@@ -73,7 +63,6 @@ function updateStreak() {
     streakCountEl.textContent = streak;
     streakDisplay.hidden = false;
     streakDisplay.classList.toggle('streak--mega', streak >= 5);
-    // Re-trigger bump animation
     streakDisplay.classList.remove('streak--bump');
     void streakDisplay.offsetWidth;
     streakDisplay.classList.add('streak--bump');
@@ -85,15 +74,23 @@ function updateStreak() {
   }
 }
 
-function setNextBtn(label, disabled) {
-  nextBtn.textContent = label;
-  nextBtn.disabled = disabled;
-  nextBtn.classList.toggle('button--disabled', disabled);
+function showResultModal(isCorrect, word, correctMeaning, definition) {
+  resultModalTitle.textContent = isCorrect ? '✅ ถูกต้อง' : '❌ ยังไม่ถูก';
+  resultModalTitle.className = 'result-modal__title ' +
+    (isCorrect ? 'result-modal__title--correct' : 'result-modal__title--wrong');
+  resultModalWord.textContent = word;
+  resultModalMeaning.textContent = correctMeaning;
+  resultModalDefinition.textContent = definition || '';
+  resultModalDefinition.style.display = definition ? 'block' : 'none';
+
+  resultModal.hidden = false;
+  resultModal.setAttribute('data-visible', 'true');
+  resultModalNextBtn.focus();
 }
 
-function clearFeedback() {
-  feedbackEl.textContent = '';
-  feedbackEl.className = 'card__feedback';
+function hideResultModal() {
+  resultModal.setAttribute('data-visible', 'false');
+  resultModal.hidden = true;
 }
 
 // ─── Question logic ──────────────────────────────────────────────────────────
@@ -134,7 +131,6 @@ function renderQuestion() {
     posPill.hidden = true;
   }
 
-  clearFeedback();
   optionsContainer.innerHTML = '';
 
   currentQuestion.options.forEach((text, index) => {
@@ -156,7 +152,6 @@ function renderQuestion() {
     optionsContainer.appendChild(btn);
   });
 
-  setNextBtn('Next →', true);
   animateCardIn();
 }
 
@@ -172,108 +167,71 @@ function handleAnswer(selectedIndex, selectedButton) {
     if (i === currentQuestion.correctIndex) btn.classList.add('option--correct');
   });
 
-  roundAsked++;
-  updateProgress();
+  totalAnswered++;
+  const correctMeaning = currentQuestion.options[currentQuestion.correctIndex];
+  const isCorrect = selectedIndex === currentQuestion.correctIndex;
 
-  if (selectedIndex === currentQuestion.correctIndex) {
+  if (isCorrect) {
     score++;
     streak++;
     if (streak > bestStreak) bestStreak = streak;
-    updateStreak();
-    updateScore();
-    feedbackEl.className = 'card__feedback card__feedback--correct';
-    feedbackEl.textContent =
-      streak >= 3 ? `🔥 Correct! ${streak} in a row!` : '✅ Correct!';
     haptic(40);
-    if (streak >= 5) showToast(`On fire! 🔥 ${streak} in a row!`);
+    if (streak >= 5) showToast(`🔥 ${streak} คำติด!`);
   } else {
     streak = 0;
-    updateStreak();
-    updateScore();
     selectedButton.classList.add('option--wrong', 'option--shake');
     selectedButton.addEventListener('animationend', () => {
       selectedButton.classList.remove('option--shake');
     }, { once: true });
-    feedbackEl.className = 'card__feedback card__feedback--wrong';
-    feedbackEl.textContent = `❌ Answer: ${currentQuestion.options[currentQuestion.correctIndex]}`;
     haptic([30, 30, 60]);
   }
 
-  const isLast = roundAsked >= QUESTIONS_PER_ROUND;
-  setNextBtn(isLast ? '🏆 See Results' : 'Next →', false);
-}
-
-// ─── Game over ────────────────────────────────────────────────────────────────
-
-function getStars(pct) {
-  if (pct >= 90) return '⭐⭐⭐';
-  if (pct >= 70) return '⭐⭐☆';
-  if (pct >= 40) return '⭐☆☆';
-  return '☆☆☆';
-}
-
-function showGameOver() {
-  const pct = Math.round((score / QUESTIONS_PER_ROUND) * 100);
-  gameoverStarsEl.textContent = getStars(pct);
-  gameoverScoreEl.textContent = `${score} / ${QUESTIONS_PER_ROUND}`;
-  gameoverAccuracyEl.textContent = `${pct}% accurate`;
-  gameoverStreakEl.textContent = `Best streak 🔥 ${bestStreak}`;
-  gameoverEl.hidden = false;
-  void gameoverEl.offsetWidth;
-  gameoverEl.classList.add('gameover--visible');
-  haptic([50, 30, 50, 30, 100]);
-}
-
-function startNewRound() {
-  score = 0;
-  roundAsked = 0;
-  streak = 0;
-  bestStreak = 0;
-  lockOptions = false;
-  gameoverEl.classList.remove('gameover--visible');
-  gameoverEl.hidden = true;
-  streakDisplay.hidden = true;
-  updateProgress();
+  updateStreak();
   updateScore();
-  renderQuestion();
+
+  showResultModal(
+    isCorrect,
+    currentQuestion.word,
+    correctMeaning,
+    currentQuestion.definition
+  );
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────────────
 
 function setupControls() {
-  nextBtn.addEventListener('click', () => {
-    if (roundAsked >= QUESTIONS_PER_ROUND && lockOptions) {
-      showGameOver();
-    } else {
-      renderQuestion();
-    }
+  resultModalNextBtn.addEventListener('click', () => {
+    hideResultModal();
+    renderQuestion();
+  });
+
+  resultModal.querySelector('.result-modal__backdrop').addEventListener('click', () => {
+    hideResultModal();
+    renderQuestion();
   });
 
   skipBtn.addEventListener('click', () => {
-    if (roundAsked >= QUESTIONS_PER_ROUND) return;
     streak = 0;
     updateStreak();
     renderQuestion();
-    showToast('Skipped');
+    showToast('ข้ามแล้ว');
   });
-
-  playAgainBtn.addEventListener('click', startNewRound);
 }
 
 function setupKeyboard() {
   document.addEventListener('keydown', (e) => {
-    if (!gameoverEl.hidden) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startNewRound(); }
+    if (resultModal.getAttribute('data-visible') === 'true') {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault();
+        hideResultModal();
+        renderQuestion();
+      }
       return;
     }
     if (['1', '2', '3', '4'].includes(e.key)) {
       const btns = optionsContainer.querySelectorAll('.option:not(.option--disabled)');
       const idx = parseInt(e.key, 10) - 1;
       if (btns[idx]) btns[idx].click();
-    }
-    if ((e.key === 'Enter' || e.key === ' ') && !nextBtn.disabled) {
-      e.preventDefault();
-      nextBtn.click();
     }
   });
 }
@@ -290,7 +248,7 @@ async function loadWords() {
       wordDisplay.textContent = 'No words loaded';
       return;
     }
-    showToast(`${words.length} words loaded 🎯`);
+    showToast(`โหลด ${words.length} คำแล้ว 🎯`);
     renderQuestion();
   } catch (err) {
     console.error(err);
@@ -300,7 +258,6 @@ async function loadWords() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  updateProgress();
   updateScore();
   setupControls();
   setupKeyboard();
