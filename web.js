@@ -1,4 +1,4 @@
-const DATA_URL = './data/oxford-5000-words.json';
+const DATA_URL = './data/oxford-b1-c1-sample.json';
 const LEVELS = ['B2', 'C1'];
 const QUESTIONS_PER_ROUND = 10;
 

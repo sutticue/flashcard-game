@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const DATA_PATH = path.join(__dirname, 'data', 'oxford-5000-words.json');
+const DATA_PATH = path.join(__dirname, 'data', 'oxford-b1-c1-sample.json');
 const LEVELS = ['B2', 'C1'];
 const QUESTIONS_PER_GAME = 10;
 
