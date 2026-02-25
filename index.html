@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#050816" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Oxford 5000 Flashcards (B2–C1)</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+
+      <header class="page__header">
+        <div class="brand">
+          <div class="brand__logo">OX</div>
+          <div class="brand__text">
+            <h1 class="brand__title">Oxford 5000</h1>
+            <p class="brand__subtitle">B2 &ndash; C1</p>
+          </div>
+        </div>
+        <div class="header__right">
+          <div class="streak" id="streak-display" hidden>
+            <span class="streak__fire">🔥</span>
+            <span class="streak__count" id="streak-count">0</span>
+          </div>
+          <div class="stats__item">
+            <span class="stats__label">Score</span>
+            <span class="stats__value" id="score">0 / 0</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-bar__fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0 / 10</span>
+      </div>
+
+      <main class="page__main">
+        <section class="card" id="card">
+          <div class="card__top">
+            <span class="pill pill--level" id="level-pill">B2</span>
+            <span class="pill pill--pos" id="pos-pill" hidden>noun</span>
+          </div>
+
+          <div class="card__word-block">
+            <p class="card__label">Word</p>
+            <h2 class="card__word" id="word-display">Loading&hellip;</h2>
+          </div>
+
+          <p class="card__hint" id="definition-display"></p>
+
+          <div class="options" id="options"></div>
+
+          <p class="card__feedback" id="feedback"></p>
+        </section>
+      </main>
+
+      <footer class="page__footer">
+        <button class="button button--ghost" id="skip-btn" type="button">Skip</button>
+        <button class="button button--disabled" id="next-btn" type="button" disabled>Next &rarr;</button>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" aria-live="polite"></div>
+
+    <div class="gameover" id="gameover" hidden>
+      <div class="gameover__card">
+        <p class="gameover__eyebrow">Round Complete</p>
+        <div class="gameover__stars" id="gameover-stars">☆☆☆</div>
+        <div class="gameover__score" id="gameover-score">0 / 10</div>
+        <p class="gameover__sub" id="gameover-accuracy">0% accurate</p>
+        <p class="gameover__sub gameover__sub--streak" id="gameover-streak">Best streak 🔥 0</p>
+        <button class="button gameover__play-again" id="play-again-btn" type="button">
+          Play Again
+        </button>
+      </div>
+    </div>
+
+    <script src="./web.js"></script>
+  </body>
+</html>

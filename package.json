@@ -1,0 +1,18 @@
+{
+  "name": "oxford-5000-flashcards",
+  "version": "1.0.0",
+  "description": "Oxford 5000 B1–C1 flashcard game for the terminal",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "oxford-5000",
+    "flashcards",
+    "cli",
+    "vocabulary",
+    "english"
+  ],
+  "author": "",
+  "license": "MIT"
+}
